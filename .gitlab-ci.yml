@@ -1,0 +1,34 @@
+variables:
+  APP_NAME: syac
+  PUSH_ON_FEATURE: "false"
+
+stages:
+  - debug
+  - build
+  - run
+
+# -----------------------------------------------
+# Compile syac binary for use in later stages
+# -----------------------------------------------
+build:binary:
+  stage: build
+  image: golang:1.24
+  script:
+    - CGO_ENABLED=0 go build -o syac -ldflags '-extldflags "-static"' .
+    - chmod +x syac
+  artifacts:
+    paths:
+      - syac
+    expire_in: 1 hour
+
+# -----------------------------------------------
+# Run syac using the artifact from build
+# -----------------------------------------------
+run:syac:
+  stage: run
+  image: alpine:3.20   # or debian if you want bash/curl/etc.
+  needs:
+    - job: build:binary
+      artifacts: true
+  script:
+    - ./syac
